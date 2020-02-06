@@ -12,6 +12,7 @@ import sanitizeFileName from "sanitize-filename"
 import { TmpDir } from "temp-file"
 import { addLicenseToDmg } from "./dmgLicense"
 import { attachAndExecute, computeBackground, detach, getDmgVendorPath } from "./dmgUtil"
+import { remove } from "fs-extra"
 
 export class DmgTarget extends Target {
   readonly options: DmgOptions = this.packager.config.dmg || Object.create(null)
@@ -33,7 +34,15 @@ export class DmgTarget extends Target {
 
     const volumeName = sanitizeFileName(this.computeVolumeName(this.options.title))
 
-    const tempDmg = await createStageDmg(await packager.getTempFile(".dmg"), appPath, volumeName)
+    const tempDmgPath = await packager.getTempFile(".dmg")
+    
+    try {
+      await remove(tempDmgPath)
+    } catch (error) {
+      // error
+    }
+    
+    const tempDmg = await createStageDmg(tempDmgPath, appPath, volumeName)
 
     const specification = await this.computeDmgOptions()
     // https://github.com/electron-userland/electron-builder/issues/2115
